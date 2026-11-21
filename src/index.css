@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    background-color: #000000;
+  }
+  /* Enable custom cursor only on desktop devices with mice/trackpads */
+  @media (pointer: fine) and (min-width: 768px) {
+    body, a, button {
+      cursor: none;
+    }
+  }
+}
+
+/* Postage Stamp Perforated Edge Effect */
+.stamp-border {
+  background-image: radial-gradient(circle at 0 50%, transparent 4px, #ffffff 4.5px),
+    radial-gradient(circle at 100% 50%, transparent 4px, #ffffff 4.5px);
+  background-size: 100% 14px;
+  padding: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 640px) {
+  .stamp-border {
+    padding: 12px;
+  }
+}
+
+/* 3D Perspective Grid for Skills Page */
+.skills-grid-bg {
+  background-size: 64px 64px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  transform: perspective(700px) rotateX(28deg) scale(1.25);
+  transform-origin: center top;
+}
+
+/* Hide Scrollbar inside Experience Laptop Screen & Navbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
