@@ -7,11 +7,11 @@ export default function Navbar({ activePage, setActivePage, theme, setTheme }) {
   const [clickedItem, setClickedItem] = useState(null);
 
   const handleNavClick = (item) => {
+    setActivePage(item);
     setClickedItem(item);
     setTimeout(() => {
-      setActivePage(item);
       setClickedItem(null);
-    }, 180);
+    }, 200);
   };
 
   const getNavTheme = () => {
