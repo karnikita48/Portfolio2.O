@@ -7,7 +7,7 @@ import Skills from './pages/Skills';
 import Projects from './pages/Projects';
 import Experience from './pages/Experience';
 import Contact from './pages/Contact';
-import { Play, Pause, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const SECTIONS = [
   { id: 'home', name: 'Home', Component: Home },
@@ -21,8 +21,6 @@ const SECTIONS = [
 export default function App() {
   const [activePage, setActivePage] = useState('Home');
   const [theme, setTheme] = useState('dark');
-  const [isAutoSwipe, setIsAutoSwipe] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const containerRef = useRef(null);
   const activePageRef = useRef('Home');
@@ -38,7 +36,7 @@ export default function App() {
     }
   };
 
-  // IntersectionObserver to sync Navbar and Dots with current visible section
+  // IntersectionObserver to sync Navbar and Dots with the currently visible section
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -70,12 +68,12 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
-  // One-Swipe Gestures: Mouse Wheel / Trackpad + Mobile Touch + Keyboard
+  // Scroll Down / Up Gesture Detection: moves to next section when user scrolls down
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Trackpad & Mouse Wheel single-swipe handler
+    // Trackpad & Mouse Wheel scroll handler
     const handleWheel = (e) => {
       if (isLockedRef.current) {
         e.preventDefault();
@@ -96,7 +94,7 @@ export default function App() {
         }
       }
 
-      // Threshold to distinguish deliberate swipe from minor jitter
+      // Threshold to distinguish deliberate scroll from minor jitter
       if (Math.abs(e.deltaY) < 25) return;
 
       e.preventDefault();
@@ -104,26 +102,24 @@ export default function App() {
 
       const currentIndex = SECTIONS.findIndex((s) => s.name === activePageRef.current);
       if (e.deltaY > 0) {
-        // Swipe Down -> Next Section
+        // Scroll Down -> Move to Next Section
         if (currentIndex < SECTIONS.length - 1) {
           scrollToSection(SECTIONS[currentIndex + 1].name);
-          setProgress(0);
         }
       } else {
-        // Swipe Up -> Previous Section
+        // Scroll Up -> Move to Previous Section
         if (currentIndex > 0) {
           scrollToSection(SECTIONS[currentIndex - 1].name);
-          setProgress(0);
         }
       }
 
-      // Lock cooldown to prevent inertial double-skips
+      // Lock cooldown to prevent rapid multi-section skips
       setTimeout(() => {
         isLockedRef.current = false;
       }, 750);
     };
 
-    // Mobile Touch single-swipe handler
+    // Mobile Touch swipe handler
     let touchStartY = 0;
     let touchStartX = 0;
 
@@ -146,16 +142,14 @@ export default function App() {
         const currentIndex = SECTIONS.findIndex((s) => s.name === activePageRef.current);
 
         if (diffY > 0) {
-          // Swiped Up -> Next Section
+          // Swipe Up (Scroll Down) -> Move to Next Section
           if (currentIndex < SECTIONS.length - 1) {
             scrollToSection(SECTIONS[currentIndex + 1].name);
-            setProgress(0);
           }
         } else {
-          // Swiped Down -> Previous Section
+          // Swipe Down (Scroll Up) -> Move to Previous Section
           if (currentIndex > 0) {
             scrollToSection(SECTIONS[currentIndex - 1].name);
-            setProgress(0);
           }
         }
 
@@ -172,14 +166,12 @@ export default function App() {
         if (currentIndex < SECTIONS.length - 1) {
           e.preventDefault();
           scrollToSection(SECTIONS[currentIndex + 1].name);
-          setProgress(0);
         }
       } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
         const currentIndex = SECTIONS.findIndex((s) => s.name === activePageRef.current);
         if (currentIndex > 0) {
           e.preventDefault();
           scrollToSection(SECTIONS[currentIndex - 1].name);
-          setProgress(0);
         }
       }
     };
@@ -197,29 +189,6 @@ export default function App() {
     };
   }, []);
 
-  // Auto-Swipe slideshow timer
-  useEffect(() => {
-    if (!isAutoSwipe) return;
-
-    const intervalTime = 5500;
-    const stepTime = 100;
-    const increment = (stepTime / intervalTime) * 100;
-
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          const currentIndex = SECTIONS.findIndex((s) => s.name === activePageRef.current);
-          const nextIndex = (currentIndex + 1) % SECTIONS.length;
-          scrollToSection(SECTIONS[nextIndex].name);
-          return 0;
-        }
-        return prev + increment;
-      });
-    }, stepTime);
-
-    return () => clearInterval(timer);
-  }, [isAutoSwipe]);
-
   const currentIndex = SECTIONS.findIndex((s) => s.name === activePage);
   const nextSection = currentIndex < SECTIONS.length - 1 ? SECTIONS[currentIndex + 1] : SECTIONS[0];
   const isLast = currentIndex === SECTIONS.length - 1;
@@ -231,10 +200,7 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         activePage={activePage}
-        setActivePage={(page) => {
-          scrollToSection(page);
-          setProgress(0);
-        }}
+        setActivePage={(page) => scrollToSection(page)}
         theme={theme}
         setTheme={setTheme}
       />
@@ -252,10 +218,7 @@ export default function App() {
           >
             <section.Component
               theme={theme}
-              onNavigate={(page) => {
-                scrollToSection(page);
-                setProgress(0);
-              }}
+              onNavigate={(page) => scrollToSection(page)}
             />
           </section>
         ))}
@@ -268,10 +231,7 @@ export default function App() {
           return (
             <button
               key={section.id}
-              onClick={() => {
-                scrollToSection(section.name);
-                setProgress(0);
-              }}
+              onClick={() => scrollToSection(section.name)}
               data-hover="true"
               aria-label={`Jump to ${section.name}`}
               className="group relative flex items-center justify-end p-1.5 cursor-pointer focus:outline-none"
@@ -302,52 +262,10 @@ export default function App() {
         })}
       </nav>
 
-      {/* Floating Auto-Swipe Controls (Bottom-Left) */}
-      <div className="fixed bottom-3.5 sm:bottom-5 left-3 sm:left-6 z-40 flex items-center gap-2">
-        <button
-          onClick={() => {
-            setIsAutoSwipe((prev) => !prev);
-            setProgress(0);
-          }}
-          data-hover="true"
-          className={`relative overflow-hidden flex items-center gap-2 rounded-full border px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-mono font-medium shadow-xl backdrop-blur-md transition-all duration-300 cursor-pointer ${
-            isAutoSwipe
-              ? 'border-red-500/80 bg-red-950/50 text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.35)] ring-1 ring-red-500/50'
-              : theme === 'dark'
-              ? 'border-white/10 bg-[#141418]/90 text-zinc-400 hover:text-white hover:border-white/30'
-              : 'border-black/10 bg-white/95 text-zinc-600 hover:text-zinc-950 hover:border-black/30'
-          }`}
-          title={isAutoSwipe ? 'Pause Auto-Swipe' : 'Enable Auto-Swipe'}
-        >
-          {isAutoSwipe ? (
-            <>
-              <Pause size={12} className="text-red-500 animate-pulse" />
-              <span>Auto-Swipe: ON</span>
-            </>
-          ) : (
-            <>
-              <Play size={12} className="opacity-70" />
-              <span>Auto-Swipe: OFF</span>
-            </>
-          )}
-
-          {/* Progress bar under pill when ON */}
-          {isAutoSwipe && (
-            <div
-              className="absolute bottom-0 left-0 h-[2.5px] bg-red-500 transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(239,68,68,1)]"
-              style={{ width: `${progress}%` }}
-            />
-          )}
-        </button>
-      </div>
-
-      {/* Floating Bottom-Center "Swipe or Click for Next Section" Hint */}
+      {/* Floating Bottom-Center "Scroll or Click for Next Section" Hint */}
       <div className="fixed bottom-3.5 sm:bottom-5 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
         <button
-          onClick={() => {
-            scrollToSection(nextSection.name);
-            setProgress(0);
-          }}
+          onClick={() => scrollToSection(nextSection.name)}
           data-hover="true"
           className={`pointer-events-auto flex items-center gap-1.5 rounded-full border px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-mono tracking-wide shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
             theme === 'dark'
@@ -362,7 +280,7 @@ export default function App() {
             </>
           ) : (
             <>
-              <span>Swipe for {nextSection.name}</span>
+              <span>Scroll for {nextSection.name}</span>
               <ChevronDown size={13} className="text-red-500 animate-bounce" />
             </>
           )}
